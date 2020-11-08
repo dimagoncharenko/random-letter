@@ -1,27 +1,31 @@
 import React, { useState } from 'react';
-import { russianAlphabet } from '../../utils/alphabets';
+import { alphabets, getRandomLetter } from '../../utils/';
 
-const getRandomLetter = (alphabet) => {
-    return alphabet[ Math.floor(Math.random() * alphabet.length)]
-};
+import './app.scss';
+
+const ANIMATION_DURATION = 500;
 
 const App = () => {
+    const { russianAlphabet } = alphabets;
     const [letter, setLetter] = useState(russianAlphabet[0]);
 
     const onLetterChange = () => {
-        let newLetter = getRandomLetter(russianAlphabet);
-
-        if (newLetter === letter) {
-            onLetterChange();
-        } else {
+        const letterIntervalId = setInterval(() => {
+            let newLetter = getRandomLetter(russianAlphabet);
             setLetter(newLetter);
-        }
+        }, 60);
+
+        setTimeout(() => {
+            clearInterval(letterIntervalId);
+        }, ANIMATION_DURATION);
     };
 
     return (
         <div className="app">
             <div className="letter">{letter}</div>
-            <button className="btn" onClick={onLetterChange}>Сменить букву</button>
+            <button className="btn" onClick={onLetterChange}>
+                Сменить букву
+            </button>
         </div>
     );
 };
