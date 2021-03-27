@@ -1,20 +1,70 @@
-import React, { useState } from 'react';
-import { alphabets, getRandomLetter } from '../../utils/';
+import React, { useEffect, useState, useCallback } from 'react';
+import { alphabets, getRandomLetter, initialSettings } from '../../utils';
+import Letter from '../Letter';
+import Settings from '../Settings';
 
 import './app.scss';
 
-const ANIMATION_DURATION = 1000;
+const ANIMATION_DURATION = 500;
+
+
 
 const App = () => {
     const { russianAlphabet } = alphabets;
-    const [letter, setLetter] = useState(russianAlphabet[0]);
+    const [letter, setLetter] = useState();
     const [fakeLetter, setFakeLetter] = useState();
-    const [isAnimation, setIsAnimation] = useState(false);
+    const [isAnimationPending, setIsAnimationPending] = useState(false);
+    const [relevantLetters, setRelevatLetters] = useState(russianAlphabet);
     const [pastLetters, setPastLetters] = useState([]);
-    const [isUnique, setIsUnique] = useState(false);
+    const [settings, setSettings] = useState({})
+    
+    const isHasRelevantLetters = relevantLetters.length;
+
+    const updateRelevantLetters = useCallback(
+        (newLetter) => {
+            if (settings.isUnique) {
+                const filtered = russianAlphabet.filter((l) => ![...pastLetters, newLetter].includes(l));
+                setRelevatLetters(filtered);
+                return;
+            }
+
+            setRelevatLetters(russianAlphabet);
+        },
+        [pastLetters, russianAlphabet, settings.isUnique]
+    );
+
+    useEffect(() => {
+        const storageLetters = JSON.parse(localStorage.getItem('pastLetters')) || [];
+        const stogeSettings = JSON.parse(localStorage.getItem('settings')) || initialSettings;
+        setPastLetters(storageLetters);
+        setSettings(stogeSettings);
+    }, []);
+
+    useEffect(() => {
+        if (!pastLetters.length) {
+            return;
+        }
+        localStorage.setItem('pastLetters', JSON.stringify(pastLetters));
+    }, [pastLetters]);
+
+    useEffect(() => {
+        updateRelevantLetters();
+    }, [settings.isUnique, updateRelevantLetters]);
+
+    const onNewGame = () => {
+        setPastLetters([]);
+        setLetter('');
+        setRelevatLetters(russianAlphabet);
+        localStorage.removeItem('pastLetters');
+    };
 
     const animationChangeLetter = () => {
-        setIsAnimation(true);
+        if (!settings.isAnimation) {
+            return Promise.resolve();
+        }
+
+        setIsAnimationPending(true);
+
         const letterIntervalId = setInterval(() => {
             setFakeLetter(getRandomLetter(russianAlphabet));
         }, 60);
@@ -28,38 +78,37 @@ const App = () => {
     };
 
     const onAnimationEnd = () => {
-        setIsAnimation(false);
-        setPastLetters([...pastLetters, letter]);
-        if (isUnique) {
-            const filtered = russianAlphabet.filter((l) => ![...pastLetters, letter].includes(l));
-            setLetter(getRandomLetter(filtered));
-        } else {
-            setLetter(getRandomLetter(russianAlphabet));
-        }
+        setIsAnimationPending(false);
+        const newLetter = getRandomLetter(relevantLetters);
+        setLetter(newLetter);
+        return newLetter;
     };
 
-    const onChangeClick = () => {
-        animationChangeLetter().then(onAnimationEnd);
+    const onChangeClick = async () => {
+        const newLetter = await animationChangeLetter().then(onAnimationEnd);
+        setPastLetters([...pastLetters, newLetter]);
+        updateRelevantLetters(newLetter);
     };
 
     return (
         <div className="app">
-            <div className="letter">{isAnimation ? fakeLetter : letter}</div>
-            <button className="btn" onClick={onChangeClick} disabled={isAnimation} >
+            {!isHasRelevantLetters && 'Уникальные буквы закончились'}
+            <Letter isAnimationPending={isAnimationPending} fakeLetter={fakeLetter} letter={letter} />
+            <button className="btn" onClick={onChangeClick} disabled={isAnimationPending || !isHasRelevantLetters}>
                 Сменить букву
             </button>
-            <div className="settings">
-                <h2>Настройки</h2>
-                <label>
-                    <input
-                        type="checkbox"
-                        name="repeat"
-                        onChange={() => setIsUnique((state) => !state)}
-                        checked={isUnique}
-                    />
-                    <span>Буквы должны быть уникальные</span>
-                </label>
+            <button className="btn" onClick={onNewGame}>
+                Новая игра
+            </button>
+
+            <div className="past-letters">
+                <h2>История</h2>
+                {pastLetters.map((letter) => `${letter} `)}
             </div>
+            <Settings
+                settings={settings}
+                setSettings={setSettings}
+            />
         </div>
     );
 };
