@@ -1,4 +1,4 @@
-const russianAlphabet = [
+const russianAlphabet: string[] = [
     'А',
     'Б',
     'В',

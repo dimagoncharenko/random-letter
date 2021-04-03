@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { alphabets, getRandomLetter, initialSettings } from '../../utils';
+import { alphabets, getRandomLetter, initialSettings, parseStorage } from '../../utils';
 import Letter from '../Letter';
 import Settings from '../Settings';
 
@@ -7,21 +7,19 @@ import './app.scss';
 
 const ANIMATION_DURATION = 500;
 
-
-
-const App = () => {
+const App: React.FC = () => {
     const { russianAlphabet } = alphabets;
-    const [letter, setLetter] = useState();
-    const [fakeLetter, setFakeLetter] = useState();
-    const [isAnimationPending, setIsAnimationPending] = useState(false);
-    const [relevantLetters, setRelevatLetters] = useState(russianAlphabet);
-    const [pastLetters, setPastLetters] = useState([]);
-    const [settings, setSettings] = useState({})
+    const [letter, setLetter] = useState<string>('');
+    const [fakeLetter, setFakeLetter] = useState<string>('');
+    const [isAnimationPending, setIsAnimationPending] = useState<boolean>(false);
+    const [relevantLetters, setRelevatLetters] = useState<string[]>(russianAlphabet);
+    const [pastLetters, setPastLetters] = useState<string[]>([]);
+    const [settings, setSettings] = useState<ISettingsState>(initialSettings)
     
     const isHasRelevantLetters = relevantLetters.length;
 
     const updateRelevantLetters = useCallback(
-        (newLetter) => {
+        (newLetter?: string): void => {
             if (settings.isUnique) {
                 const filtered = russianAlphabet.filter((l) => ![...pastLetters, newLetter].includes(l));
                 setRelevatLetters(filtered);
@@ -34,8 +32,8 @@ const App = () => {
     );
 
     useEffect(() => {
-        const storageLetters = JSON.parse(localStorage.getItem('pastLetters')) || [];
-        const stogeSettings = JSON.parse(localStorage.getItem('settings')) || initialSettings;
+        const storageLetters = parseStorage(localStorage.getItem('pastLetters')) || [] ;
+        const stogeSettings = parseStorage(localStorage.getItem('settings')) || initialSettings;
         setPastLetters(storageLetters);
         setSettings(stogeSettings);
     }, []);
@@ -52,10 +50,13 @@ const App = () => {
     }, [settings.isUnique, updateRelevantLetters]);
 
     const onNewGame = () => {
-        setPastLetters([]);
-        setLetter('');
-        setRelevatLetters(russianAlphabet);
-        localStorage.removeItem('pastLetters');
+        const isClose = window.confirm('Начать новую игру?');
+        if (isClose) {
+            setPastLetters([]);
+            setLetter('');
+            setRelevatLetters(russianAlphabet);
+            localStorage.removeItem('pastLetters');
+        }
     };
 
     const animationChangeLetter = () => {

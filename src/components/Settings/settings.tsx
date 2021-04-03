@@ -1,6 +1,11 @@
 import React, { useEffect } from 'react';
 
-const Settings = ({ settings, setSettings }) => {
+interface OwnProps {
+    settings: ISettingsState,
+    setSettings: React.Dispatch<React.SetStateAction<ISettingsState>>,
+};
+
+const Settings: React.FC<OwnProps> = ({ settings, setSettings }) => {
     useEffect(() => {
         if (!Object.keys(settings).length) {
             return;

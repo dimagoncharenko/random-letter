@@ -1,7 +1,13 @@
 import React from 'react';
 
-const Letter = ({ isAnimationPending, fakeLetter, letter }) => {
-    const renderLetter = () => {
+interface OwnProps {
+    isAnimationPending: boolean,
+    fakeLetter: string,
+    letter: string
+}
+
+const Letter: React.FC<OwnProps> = ({ isAnimationPending, fakeLetter, letter }) => {
+    const renderLetter = (): string => {
         if (isAnimationPending) {
             return fakeLetter;
         }
